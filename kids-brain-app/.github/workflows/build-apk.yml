@@ -3,7 +3,13 @@ name: Build APK
 on:
   push:
     branches: [main]
+    paths:
+      - 'kids-brain-app/**'
   workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: kids-brain-app
 
 jobs:
   build:
@@ -32,4 +38,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: kids-brain-app/build/app/outputs/flutter-apk/app-release.apk
