@@ -17,10 +17,10 @@ class _PatternGameState extends State<PatternGame> {
   List<String> _pattern = [];
   String _answer = '';
   List<String> _options = [];
-  int _score = 0;
-  int _questionNum = 0;
-  bool _answered = false;
-  bool _correct = false;
+  int score = 0;
+  int questionNum = 0;
+  bool answered = false;
+  bool correct = false;
 
   bool get isTV => MediaQuery.of(context).size.width > 800;
   double get fontSize => isTV ? 48 : 22;
@@ -59,23 +59,23 @@ class _PatternGameState extends State<PatternGame> {
     _options = opts.toList()..shuffle();
 
     setState(() {
-      _answered = false;
-      _correct = false;
-      _questionNum++;
+      answered = false;
+      correct = false;
+      questionNum++;
     });
     
     WidgetsBinding.instance.addPostFrameCallback((_) => _speakQuestion());
   }
 
   void _checkAnswer(String selected) {
-    if (_answered) return;
+    if (answered) return;
     setState(() {
-      _answered = true;
-      _correct = selected == _answer;
-      if (_correct) _score++;
+      answered = true;
+      correct = selected == _answer;
+      if (correct) score++;
     });
     
-    if (_correct) {
+    if (correct) {
       _tts.speak('答对了！真棒！');
     } else {
       _tts.speak('不对哦，再想想看！');
@@ -83,7 +83,7 @@ class _PatternGameState extends State<PatternGame> {
     
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      if (_questionNum >= 8) {
+      if (questionNum >= 8) {
         _showResult();
       } else {
         setState(() => _generateQuestion());
@@ -92,7 +92,7 @@ class _PatternGameState extends State<PatternGame> {
   }
 
   void _showResult() {
-    _tts.speak('答题结束！你答对了 $_score 道题！');
+    _tts.speak('答题结束！你答对了 $score 道题！');
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -101,14 +101,14 @@ class _PatternGameState extends State<PatternGame> {
         title: Text('🎉 答题结束', 
           textAlign: TextAlign.center, 
           style: TextStyle(fontSize: isTV ? 56 : 28, fontWeight: FontWeight.bold)),
-        content: Text('答对了 $_score/8 题\n${_score >= 6 ? '你太厉害了！🌟' : '继续加油！💪'}', 
+        content: Text('答对了 $score/8 题\n${score >= 6 ? '你太厉害了！🌟' : '继续加油！💪'}', 
           textAlign: TextAlign.center, 
           style: TextStyle(fontSize: isTV ? 40 : 20)),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              setState(() { _score = 0; _questionNum = 0; _generateQuestion(); });
+              setState(() { score = 0; questionNum = 0; _generateQuestion(); });
             },
             child: Text('再来一轮', style: TextStyle(fontSize: isTV ? 32 : 18)),
           ),
@@ -162,8 +162,8 @@ class _PatternGameState extends State<PatternGame> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('得分: $_score', style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.red)),
-              Text('第 $_questionNum/8 题', style: TextStyle(fontSize: isTV ? 32 : 16, color: Colors.grey)),
+              Text('得分: $score', style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.red)),
+              Text('第 $questionNum/8 题', style: TextStyle(fontSize: isTV ? 32 : 16, color: Colors.grey)),
             ],
           ),
           SizedBox(height: spacing),
@@ -187,7 +187,7 @@ class _PatternGameState extends State<PatternGame> {
                     border: Border.all(color: Colors.red, width: isTV ? 5 : 3),
                     borderRadius: BorderRadius.circular(isTV ? 20 : 12),
                   ),
-                  child: _answered
+                  child: answered
                       ? Center(child: Text(_answer, style: TextStyle(fontSize: isTV ? 60 : 30)))
                       : Center(child: Text('?', style: TextStyle(fontSize: isTV ? 48 : 24, color: Colors.grey, fontWeight: FontWeight.bold))),
                 ),
@@ -195,10 +195,10 @@ class _PatternGameState extends State<PatternGame> {
             ),
           ),
           SizedBox(height: spacing),
-          if (_answered)
+          if (answered)
             Text(
-              _correct ? '✅ 答对了！' : '❌ 答错了',
-              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: _correct ? Colors.green : Colors.red),
+              correct ? '✅ 答对了！' : '❌ 答错了',
+              style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: correct ? Colors.green : Colors.red),
             ),
           const Spacer(),
           Wrap(
@@ -216,7 +216,7 @@ class _PatternGameState extends State<PatternGame> {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(isTV ? 32 : 16),
                     border: Border.all(
-                      color: _answered && opt == _answer ? Colors.green : Colors.red,
+                      color: answered && opt == _answer ? Colors.green : Colors.red,
                       width: isTV ? 6 : 3,
                     ),
                     boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.2), blurRadius: isTV ? 16 : 6)],
@@ -246,8 +246,8 @@ class _PatternGameState extends State<PatternGame> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('得分: $_score', style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.red)),
-                    Text('第 $_questionNum/8 题', style: TextStyle(fontSize: isTV ? 32 : 16, color: Colors.grey)),
+                    Text('得分: $score', style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: Colors.red)),
+                    Text('第 $questionNum/8 题', style: TextStyle(fontSize: isTV ? 32 : 16, color: Colors.grey)),
                   ],
                 ),
                 const Spacer(),
@@ -275,7 +275,7 @@ class _PatternGameState extends State<PatternGame> {
                           border: Border.all(color: Colors.red, width: isTV ? 6 : 4),
                           borderRadius: BorderRadius.circular(isTV ? 24 : 12),
                         ),
-                        child: _answered
+                        child: answered
                             ? Center(child: Text(_answer, style: TextStyle(fontSize: isTV ? 72 : 36)))
                             : Center(child: Text('?', style: TextStyle(fontSize: isTV ? 56 : 28, color: Colors.grey, fontWeight: FontWeight.bold))),
                       ),
@@ -283,10 +283,10 @@ class _PatternGameState extends State<PatternGame> {
                   ),
                 ),
                 SizedBox(height: spacing),
-                if (_answered)
+                if (answered)
                   Text(
-                    _correct ? '✅ 答对了！' : '❌ 答错了',
-                    style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: _correct ? Colors.green : Colors.red),
+                    correct ? '✅ 答对了！' : '❌ 答错了',
+                    style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.bold, color: correct ? Colors.green : Colors.red),
                   ),
                 const Spacer(),
               ],
@@ -311,7 +311,7 @@ class _PatternGameState extends State<PatternGame> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(isTV ? 40 : 20),
                       side: BorderSide(
-                        color: _answered && opt == _answer ? Colors.green : Colors.red,
+                        color: answered && opt == _answer ? Colors.green : Colors.red,
                         width: isTV ? 6 : 3,
                       ),
                     ),

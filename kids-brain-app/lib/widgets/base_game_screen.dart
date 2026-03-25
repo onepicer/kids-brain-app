@@ -18,16 +18,16 @@ abstract class BaseGameScreen extends StatefulWidget {
 
 abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
   final TtsService _tts = TtsService();
-  int _score = 0;
-  int _questionNum = 0;
-  bool _answered = false;
-  bool _correct = false;
+  int score = 0;
+  int questionNum = 0;
+  bool answered = false;
+  bool correct = false;
   
   // Public getters for child classes
-  int get score => _score;
-  int get questionNum => _questionNum;
-  bool get answered => _answered;
-  bool get correct => _correct;
+  int get score => score;
+  int get questionNum => questionNum;
+  bool get answered => answered;
+  bool get correct => correct;
   
   // TV 适配
   bool get isTV {
@@ -72,7 +72,7 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
   Widget buildOptions();
   
   void showResult() {
-    _tts.speak('答题结束！你答对了 $_score 道题！');
+    _tts.speak('答题结束！你答对了 $score 道题！');
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -82,7 +82,7 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: fontSizeLarge, fontWeight: FontWeight.bold)),
         content: Text(
-          '答对了 $_score/10 题\n${_score >= 7 ? '你太厉害了！🌟' : _score >= 4 ? '继续加油！💪' : '再练练吧！😊'}',
+          '答对了 $score/10 题\n${score >= 7 ? '你太厉害了！🌟' : score >= 4 ? '继续加油！💪' : '再练练吧！😊'}',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: fontSizeMedium),
         ),
@@ -91,9 +91,9 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
             onPressed: () {
               Navigator.pop(ctx);
               setState(() {
-                _score = 0;
-                _questionNum = 0;
-                _answered = false;
+                score = 0;
+                questionNum = 0;
+                answered = false;
                 generateQuestion();
               });
             },
@@ -156,9 +156,9 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('得分: $_score', 
+              Text('得分: $score', 
                 style: TextStyle(fontSize: fontSizeMedium, fontWeight: FontWeight.bold, color: widget.themeColor)),
-              Text('第 $_questionNum/10 题', 
+              Text('第 $questionNum/10 题', 
                 style: TextStyle(fontSize: fontSizeSmall, color: Colors.grey)),
             ],
           ),
@@ -195,9 +195,9 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('得分: $_score', 
+                    Text('得分: $score', 
                       style: TextStyle(fontSize: fontSizeMedium, fontWeight: FontWeight.bold, color: widget.themeColor)),
-                    Text('第 $_questionNum/10 题', 
+                    Text('第 $questionNum/10 题', 
                       style: TextStyle(fontSize: fontSizeSmall, color: Colors.grey)),
                   ],
                 ),
@@ -258,11 +258,11 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
   }
   
   Widget _buildFeedback() {
-    if (!_answered) {
+    if (!answered) {
       return Text('选正确的答案：', style: TextStyle(fontSize: fontSizeSmall, color: Colors.grey));
     }
     
-    if (_correct) {
+    if (correct) {
       return Text('✅ 答对了！', 
         style: TextStyle(fontSize: fontSizeMedium, fontWeight: FontWeight.bold, color: Colors.green));
     } else {

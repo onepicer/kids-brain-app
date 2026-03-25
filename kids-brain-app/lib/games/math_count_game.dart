@@ -53,9 +53,9 @@ class _MathCountGameState extends BaseGameState<MathCountGame> {
     _options = opts.map((i) => i.toString()).toList()..shuffle();
 
     setState(() {
-      _answered = false;
-      _correct = false;
-      _questionNum++;
+      answered = false;
+      correct = false;
+      questionNum++;
     });
     
     // 题目生成后朗读
@@ -71,17 +71,17 @@ class _MathCountGameState extends BaseGameState<MathCountGame> {
 
   @override
   void checkAnswer(dynamic selected) {
-    if (_answered) return;
+    if (answered) return;
     final selectedInt = selected as int;
     setState(() {
-      _answered = true;
-      _correct = selectedInt == _targetCount;
-      if (_correct) _score++;
+      answered = true;
+      correct = selectedInt == _targetCount;
+      if (correct) score++;
     });
     
     // 播放反馈语音
     final tts = TtsService();
-    if (_correct) {
+    if (correct) {
       tts.speak('答对了！真棒！');
     } else {
       tts.speak('不对哦，正确答案是 $_targetCount');
@@ -89,7 +89,7 @@ class _MathCountGameState extends BaseGameState<MathCountGame> {
     
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      if (_questionNum >= 10) {
+      if (questionNum >= 10) {
         showResult();
       } else {
         generateQuestion();
@@ -120,8 +120,8 @@ class _MathCountGameState extends BaseGameState<MathCountGame> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: _options.map((opt) {
           final optInt = int.tryParse(opt) ?? 0;
-          final isSelected = _answered && optInt == _targetCount;
-          final isWrong = _answered && optInt != _targetCount;
+          final isSelected = answered && optInt == _targetCount;
+          final isWrong = answered && optInt != _targetCount;
           return TVButton(
             text: opt,
             onPressed: () => checkAnswer(optInt),
@@ -142,8 +142,8 @@ class _MathCountGameState extends BaseGameState<MathCountGame> {
       childAspectRatio: isTV ? 1.5 : 1.2,
       children: _options.map((opt) {
         final optInt = int.tryParse(opt) ?? 0;
-        final isSelected = _answered && optInt == _targetCount;
-        final isWrong = _answered && optInt != _targetCount;
+        final isSelected = answered && optInt == _targetCount;
+        final isWrong = answered && optInt != _targetCount;
         return GestureDetector(
           onTap: () => checkAnswer(optInt),
           child: AnimatedContainer(

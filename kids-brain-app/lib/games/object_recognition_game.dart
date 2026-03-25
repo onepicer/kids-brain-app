@@ -66,9 +66,9 @@ class _ObjectRecognitionGameState extends BaseGameState<ObjectRecognitionGame> {
     _options.shuffle();
     
     setState(() {
-      _answered = false;
-      _correct = false;
-      _questionNum++;
+      answered = false;
+      correct = false;
+      questionNum++;
     });
     
     // 朗读题目
@@ -85,19 +85,19 @@ class _ObjectRecognitionGameState extends BaseGameState<ObjectRecognitionGame> {
 
   @override
   void checkAnswer(dynamic selected) {
-    if (_answered) return;
+    if (answered) return;
     final selectedName = selected as String;
     final correctName = _items[_currentIndex]['name']!;
     
     setState(() {
-      _answered = true;
-      _correct = selectedName == correctName;
-      if (_correct) _score++;
+      answered = true;
+      correct = selectedName == correctName;
+      if (correct) score++;
     });
     
     // 播放反馈语音
     final tts = TtsService();
-    if (_correct) {
+    if (correct) {
       tts.speak('答对了！这是$correctName！');
     } else {
       tts.speak('不对哦，这是$correctName！');
@@ -105,7 +105,7 @@ class _ObjectRecognitionGameState extends BaseGameState<ObjectRecognitionGame> {
     
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
-      if (_questionNum >= 10) {
+      if (questionNum >= 10) {
         showResult();
       } else {
         generateQuestion();
@@ -146,8 +146,8 @@ class _ObjectRecognitionGameState extends BaseGameState<ObjectRecognitionGame> {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: _options.map((opt) {
-          final isSelected = _answered && opt == currentItem['name'];
-          final isWrong = _answered && opt != currentItem['name'];
+          final isSelected = answered && opt == currentItem['name'];
+          final isWrong = answered && opt != currentItem['name'];
           return TVButton(
             text: opt,
             onPressed: () => checkAnswer(opt),
@@ -163,8 +163,8 @@ class _ObjectRecognitionGameState extends BaseGameState<ObjectRecognitionGame> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: _options.map((opt) {
-        final isSelected = _answered && opt == currentItem['name'];
-        final isWrong = _answered && opt != currentItem['name'];
+        final isSelected = answered && opt == currentItem['name'];
+        final isWrong = answered && opt != currentItem['name'];
         return Padding(
           padding: EdgeInsets.only(bottom: isTV ? 20 : 12),
           child: GestureDetector(
