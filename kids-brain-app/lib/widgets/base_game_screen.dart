@@ -23,6 +23,12 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
   bool _answered = false;
   bool _correct = false;
   
+  // Public getters for child classes
+  int get score => _score;
+  int get questionNum => _questionNum;
+  bool get answered => _answered;
+  bool get correct => _correct;
+  
   // TV 适配
   bool get isTV {
     final screenWidth = MediaQuery.of(context).size.width;
