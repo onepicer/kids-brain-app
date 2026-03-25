@@ -7,7 +7,7 @@ abstract class BaseGameScreen extends StatefulWidget {
   final String title;
   final String emoji;
   final Color themeColor;
-  
+
   const BaseGameScreen({
     super.key,
     required this.title,
@@ -18,33 +18,33 @@ abstract class BaseGameScreen extends StatefulWidget {
 
 abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
   final TtsService _tts = TtsService();
-  int score = 0;
-  int questionNum = 0;
-  bool answered = false;
-  bool correct = false;
-  
+  int _score = 0;
+  int _questionNum = 0;
+  bool _answered = false;
+  bool _correct = false;
+
   // Public getters for child classes
-  int get score => score;
-  int get questionNum => questionNum;
-  bool get answered => answered;
-  bool get correct => correct;
-  
+  int get score => _score;
+  int get questionNum => _questionNum;
+  bool get answered => _answered;
+  bool get correct => _correct;
+
   // TV 适配
   bool get isTV {
     final screenWidth = MediaQuery.of(context).size.width;
     return screenWidth > 800; // 大屏认为是 TV
   }
-  
+
   double get fontSizeLarge => isTV ? 48 : 28;
   double get fontSizeMedium => isTV ? 36 : 22;
   double get fontSizeSmall => isTV ? 28 : 16;
   double get buttonHeight => isTV ? 100 : 60;
   double get spacing => isTV ? 40 : 20;
   double get padding => isTV ? 40 : 16;
-  
+
   String get questionText;
   String? get correctAnswerText;
-  
+
   @override
   void initState() {
     super.initState();
@@ -52,25 +52,25 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
       _speakQuestion();
     });
   }
-  
+
   @override
   void dispose() {
     _tts.stop();
     super.dispose();
   }
-  
+
   Future<void> _speakQuestion() async {
     final text = questionText;
     if (text.isNotEmpty) {
       await _tts.speak(text);
     }
   }
-  
+
   void generateQuestion();
   void checkAnswer(dynamic selected);
   Widget buildQuestionContent();
   Widget buildOptions();
-  
+
   void showResult() {
     _tts.speak('答题结束！你答对了 $score 道题！');
     showDialog(
@@ -78,7 +78,7 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(32)),
-        title: Text('🎉 答题结束', 
+        title: Text('🎉 答题结束',
           textAlign: TextAlign.center,
           style: TextStyle(fontSize: fontSizeLarge, fontWeight: FontWeight.bold)),
         content: Text(
@@ -103,13 +103,13 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
       ),
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final isLandscape = screenWidth > screenHeight;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8E7),
       appBar: AppBar(
@@ -146,7 +146,7 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
         : _buildNormalLayout(),
     );
   }
-  
+
   Widget _buildNormalLayout() {
     return Padding(
       padding: EdgeInsets.all(padding),
@@ -156,31 +156,31 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('得分: $score', 
+              Text('得分: $score',
                 style: TextStyle(fontSize: fontSizeMedium, fontWeight: FontWeight.bold, color: widget.themeColor)),
-              Text('第 $questionNum/10 题', 
+              Text('第 $questionNum/10 题',
                 style: TextStyle(fontSize: fontSizeSmall, color: Colors.grey)),
             ],
           ),
           SizedBox(height: spacing),
-          
+
           // 题目区域（带语音按钮）
           _buildQuestionArea(),
-          
+
           SizedBox(height: spacing),
-          
+
           // 反馈文字
           _buildFeedback(),
-          
+
           SizedBox(height: spacing / 2),
-          
+
           // 选项区域
           Expanded(child: buildOptions()),
         ],
       ),
     );
   }
-  
+
   Widget _buildTVLandscapeLayout() {
     return Padding(
       padding: EdgeInsets.all(padding),
@@ -195,9 +195,9 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('得分: $score', 
+                    Text('得分: $score',
                       style: TextStyle(fontSize: fontSizeMedium, fontWeight: FontWeight.bold, color: widget.themeColor)),
-                    Text('第 $questionNum/10 题', 
+                    Text('第 $questionNum/10 题',
                       style: TextStyle(fontSize: fontSizeSmall, color: Colors.grey)),
                   ],
                 ),
@@ -218,7 +218,7 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
       ),
     );
   }
-  
+
   Widget _buildQuestionArea() {
     return Container(
       padding: EdgeInsets.all(padding),
@@ -231,7 +231,7 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
         mainAxisSize: MainAxisSize.min,
         children: [
           // 题目文字
-          Text(questionText, 
+          Text(questionText,
             style: TextStyle(fontSize: fontSizeLarge, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
@@ -256,18 +256,18 @@ abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
       ),
     );
   }
-  
+
   Widget _buildFeedback() {
     if (!answered) {
       return Text('选正确的答案：', style: TextStyle(fontSize: fontSizeSmall, color: Colors.grey));
     }
-    
+
     if (correct) {
-      return Text('✅ 答对了！', 
+      return Text('✅ 答对了！',
         style: TextStyle(fontSize: fontSizeMedium, fontWeight: FontWeight.bold, color: Colors.green));
     } else {
       final correctText = correctAnswerText ?? '';
-      return Text('❌ 正确答案是 $correctText', 
+      return Text('❌ 正确答案是 $correctText',
         style: TextStyle(fontSize: fontSizeMedium, fontWeight: FontWeight.bold, color: Colors.red));
     }
   }
@@ -299,11 +299,11 @@ class TVButton extends StatelessWidget {
     final isTV = MediaQuery.of(context).size.width > 800;
     final actualFontSize = fontSize ?? (isTV ? 48 : 36);
     final actualHeight = height ?? (isTV ? 120 : 80);
-    
+
     Color bgColor;
     Color borderColor;
     Color textColor;
-    
+
     if (isSelected) {
       bgColor = Colors.green[100]!;
       borderColor = Colors.green;
@@ -317,7 +317,7 @@ class TVButton extends StatelessWidget {
       borderColor = primaryColor;
       textColor = primaryColor;
     }
-    
+
     return FocusableActionDetector(
       onFocusChange: (focused) {},
       child: Container(
