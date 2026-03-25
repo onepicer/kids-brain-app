@@ -19,6 +19,10 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   late AnimationController _cloudController;
   final List<ModuleInfo> _modules = [];
 
+  // TV 适配
+  bool get isTV => MediaQuery.of(context).size.width > 800;
+  bool get isLandscape => MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
+
   @override
   void initState() {
     super.initState();
@@ -106,8 +110,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             children: [
               // Animated clouds
               ...List.generate(5, (i) {
-                final top = 20.0 + i * 60.0;
-                final size = 30.0 + Random(i).nextDouble() * 40;
+                final top = 20.0 + i * (isTV ? 80 : 60);
+                final size = 30.0 + Random(i).nextDouble() * (isTV ? 60 : 40);
                 return AnimatedBuilder(
                   animation: _cloudController,
                   builder: (context, child) {
@@ -130,15 +134,15 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               }),
               // Title
               Positioned(
-                top: 20,
+                top: isTV ? 40 : 20,
                 left: 0,
                 right: 0,
                 child: Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: isTV ? 48 : 24, vertical: isTV ? 16 : 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(30),
+                      borderRadius: BorderRadius.circular(isTV ? 40 : 30),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.1),
@@ -147,38 +151,66 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         ),
                       ],
                     ),
-                    child: const Text(
+                    child: Text(
                       '🧠 奇妙大脑岛 🏝️',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: isTV ? 56 : 32,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFFFF6B6B),
+                        color: const Color(0xFFFF6B6B),
                       ),
                     ),
                   ),
                 ),
               ),
-              // Module grid
+              // Module grid - 适配 TV
               Padding(
-                padding: const EdgeInsets.only(top: 90, bottom: 20),
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: _modules.length,
-                  itemBuilder: (context, index) {
-                    return _buildModuleCard(context, index);
-                  },
+                padding: EdgeInsets.only(
+                  top: isTV ? 140 : 90, 
+                  bottom: isTV ? 40 : 20,
+                  left: isTV ? 40 : 16,
+                  right: isTV ? 40 : 16,
                 ),
+                child: isTV && isLandscape
+                  ? _buildTVGrid()
+                  : _buildNormalGrid(),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildNormalGrid() {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        mainAxisSpacing: isTV ? 32 : 20,
+        crossAxisSpacing: isTV ? 32 : 20,
+        childAspectRatio: isTV ? 1.0 : 0.85,
+      ),
+      itemCount: _modules.length,
+      itemBuilder: (context, index) {
+        return _buildModuleCard(context, index);
+      },
+    );
+  }
+
+  Widget _buildTVGrid() {
+    // TV 横屏：3列大卡片
+    return GridView.builder(
+      padding: const EdgeInsets.all(24),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 40,
+        crossAxisSpacing: 40,
+        childAspectRatio: 1.2,
+      ),
+      itemCount: _modules.length,
+      itemBuilder: (context, index) {
+        return _buildTVModuleCard(context, index);
+      },
     );
   }
 
@@ -203,12 +235,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(isTV ? 40 : 24),
             boxShadow: [
               BoxShadow(
                 color: module.color.withOpacity(0.4),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
+                blurRadius: isTV ? 20 : 12,
+                offset: Offset(0, isTV ? 10 : 6),
               ),
             ],
           ),
@@ -216,8 +248,8 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 70,
-                height: 70,
+                width: isTV ? 120 : 70,
+                height: isTV ? 120 : 70,
                 decoration: BoxDecoration(
                   color: module.color.withOpacity(0.2),
                   shape: BoxShape.circle,
@@ -225,30 +257,98 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 child: Center(
                   child: Text(
                     module.emoji,
-                    style: const TextStyle(fontSize: 36),
+                    style: TextStyle(fontSize: isTV ? 60 : 36),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: isTV ? 16 : 8),
               Text(
                 module.name,
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: isTV ? 32 : 20,
                   fontWeight: FontWeight.bold,
                   color: module.color,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: isTV ? 8 : 4),
               Text(
                 module.desc,
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: isTV ? 20 : 14,
                   color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTVModuleCard(BuildContext context, int index) {
+    final module = _modules[index];
+    return AnimatedBuilder(
+      animation: _floatControllers[index],
+      builder: (context, child) {
+        final offset = sin(_floatControllers[index].value * pi) * 8;
+        return Transform.translate(
+          offset: Offset(0, offset),
+          child: child,
+        );
+      },
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => module.screen),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: module.color,
+          elevation: 8,
+          padding: const EdgeInsets.all(24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(40),
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: module.color.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  module.emoji,
+                  style: const TextStyle(fontSize: 56),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              module.name,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: module.color,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              module.desc,
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );

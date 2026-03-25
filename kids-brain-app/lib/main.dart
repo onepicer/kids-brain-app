@@ -1,13 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'screens/home_screen.dart';
+import 'services/tts_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 支持横竖屏（TV主要是横屏）
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
   ]);
+  
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  
+  // 初始化TTS
+  TtsService().init();
+  
   runApp(const KidsBrainApp());
 }
 

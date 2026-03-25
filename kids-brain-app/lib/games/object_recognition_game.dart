@@ -1,14 +1,21 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import '../widgets/base_game_screen.dart';
+import '../services/tts_service.dart';
 
-class ObjectRecognitionGame extends StatefulWidget {
-  const ObjectRecognitionGame({super.key});
+class ObjectRecognitionGame extends BaseGameScreen {
+  const ObjectRecognitionGame({super.key})
+    : super(
+        title: '语言岛',
+        emoji: '🏝️',
+        themeColor: Color(0xFFDDA0DD),
+      );
 
   @override
   State<ObjectRecognitionGame> createState() => _ObjectRecognitionGameState();
 }
 
-class _ObjectRecognitionGameState extends State<ObjectRecognitionGame> {
+class _ObjectRecognitionGameState extends BaseGameState<ObjectRecognitionGame> {
   static final List<Map<String, String>> _items = [
     {'emoji': '🐶', 'name': '小狗'},
     {'emoji': '🐱', 'name': '小猫'},
@@ -25,18 +32,21 @@ class _ObjectRecognitionGameState extends State<ObjectRecognitionGame> {
   final Random _random = Random();
   int _currentIndex = 0;
   List<String> _options = [];
-  int _score = 0;
-  int _questionNum = 0;
-  bool _answered = false;
-  bool _correct = false;
+
+  @override
+  String get questionText => '这是什么动物？';
+  
+  @override
+  String? get correctAnswerText => _items[_currentIndex]['name'];
 
   @override
   void initState() {
     super.initState();
-    _generateQuestion();
+    generateQuestion();
   }
 
-  void _generateQuestion() {
+  @override
+  void generateQuestion() {
     _currentIndex = _random.nextInt(_items.length);
     _options = [];
     
@@ -54,149 +64,154 @@ class _ObjectRecognitionGameState extends State<ObjectRecognitionGame> {
     }
     
     _options.shuffle();
-    _answered = false;
-    _correct = false;
-    _questionNum++;
+    
+    setState(() {
+      _answered = false;
+      _correct = false;
+      _questionNum++;
+    });
+    
+    // 朗读题目
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakQuestionWithAnimal();
+    });
+  }
+  
+  Future<void> _speakQuestionWithAnimal() async {
+    final tts = TtsService();
+    final animalName = _items[_currentIndex]['name']!;
+    await tts.speak('这是什么动物？');
   }
 
-  void _checkAnswer(String selected) {
+  @override
+  void checkAnswer(dynamic selected) {
     if (_answered) return;
+    final selectedName = selected as String;
     final correctName = _items[_currentIndex]['name']!;
+    
     setState(() {
       _answered = true;
-      _correct = selected == correctName;
+      _correct = selectedName == correctName;
       if (_correct) _score++;
     });
     
-    Future.delayed(const Duration(seconds: 1), () {
+    // 播放反馈语音
+    final tts = TtsService();
+    if (_correct) {
+      tts.speak('答对了！这是$correctName！');
+    } else {
+      tts.speak('不对哦，这是$correctName！');
+    }
+    
+    Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
       if (_questionNum >= 10) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-            title: const Text('🎉 答题结束', textAlign: TextAlign.center, style: TextStyle(fontSize: 24)),
-            content: Text(
-              '答对了 $_score/10 题\n${_score >= 7 ? '你真棒！🌟' : _score >= 4 ? '继续加油！💪' : '再练练吧！😊'}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  setState(() { _score = 0; _questionNum = 0; _generateQuestion(); });
-                },
-                child: const Text('再来一轮', style: TextStyle(fontSize: 16)),
-              ),
-            ],
-          ),
-        );
+        showResult();
       } else {
-        setState(() => _generateQuestion());
+        generateQuestion();
       }
     });
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget buildQuestionContent() {
     final currentItem = _items[_currentIndex];
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F0FF),
-      appBar: AppBar(
-        title: const Text('🏝️ 语言岛', style: TextStyle(color: Colors.white, fontSize: 22)),
-        backgroundColor: const Color(0xFFDDA0DD),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+    final boxSize = isTV ? 280.0 : 150.0;
+    final emojiSize = isTV ? 180.0 : 100.0;
+    
+    return Container(
+      width: boxSize,
+      height: boxSize,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(isTV ? 60 : 30),
+        boxShadow: [BoxShadow(
+          color: widget.themeColor.withOpacity(0.3), 
+          blurRadius: isTV ? 30 : 15, 
+          offset: Offset(0, isTV ? 10 : 5)
+        )],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('得分: $_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple)),
-                Text('第 $_questionNum/10 题', style: const TextStyle(fontSize: 16, color: Colors.grey)),
-              ],
-            ),
-            const SizedBox(height: 20),
-            const Text('这是什么动物？', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 24),
-            // Animal display
-            Container(
-              width: 150,
-              height: 150,
+      child: Center(
+        child: Text(currentItem['emoji']!, style: TextStyle(fontSize: emojiSize)),
+      ),
+    );
+  }
+
+  @override
+  Widget buildOptions() {
+    final currentItem = _items[_currentIndex];
+    
+    if (isTV && MediaQuery.of(context).size.width > MediaQuery.of(context).size.height) {
+      // TV 横屏：垂直排列大按钮
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: _options.map((opt) {
+          final isSelected = _answered && opt == currentItem['name'];
+          final isWrong = _answered && opt != currentItem['name'];
+          return TVButton(
+            text: opt,
+            onPressed: () => checkAnswer(opt),
+            primaryColor: widget.themeColor,
+            isSelected: isSelected,
+            isWrong: isWrong,
+          );
+        }).toList(),
+      );
+    }
+    
+    // 普通布局
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: _options.map((opt) {
+        final isSelected = _answered && opt == currentItem['name'];
+        final isWrong = _answered && opt != currentItem['name'];
+        return Padding(
+          padding: EdgeInsets.only(bottom: isTV ? 20 : 12),
+          child: GestureDetector(
+            onTap: () => checkAnswer(opt),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: isTV ? 24 : 16),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-                boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 5))],
+                color: isSelected
+                    ? Colors.green[100]
+                    : isWrong
+                        ? Colors.red[50]
+                        : Colors.white,
+                borderRadius: BorderRadius.circular(isTV ? 30 : 16),
+                border: Border.all(
+                  color: isSelected
+                      ? Colors.green
+                      : isWrong
+                          ? Colors.red
+                          : widget.themeColor,
+                  width: isTV ? 5 : 3,
+                ),
+                boxShadow: [BoxShadow(
+                  color: widget.themeColor.withOpacity(0.1), 
+                  blurRadius: isTV ? 16 : 8, 
+                  offset: Offset(0, isTV ? 6 : 3)
+                )],
               ),
               child: Center(
-                child: Text(currentItem['emoji']!, style: const TextStyle(fontSize: 80)),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_answered)
-              Text(
-                _correct ? '✅ 对了！这是${currentItem['name']}' : '❌ 这是${currentItem['name']}',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _correct ? Colors.green : Colors.red),
-              ),
-            const Spacer(),
-            // Options
-            Column(
-              children: _options.map((opt) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: GestureDetector(
-                    onTap: () => _checkAnswer(opt),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: _answered && opt == currentItem['name']
-                            ? Colors.green[100]
-                            : _answered && opt != currentItem['name']
-                                ? Colors.red[50]
-                                : Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _answered && opt == currentItem['name']
-                              ? Colors.green
-                              : _answered && opt != currentItem['name']
-                                  ? Colors.red
-                                  : const Color(0xFFDDA0DD),
-                          width: 3,
-                        ),
-                        boxShadow: [BoxShadow(color: Colors.purple.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 3))],
-                      ),
-                      child: Center(
-                        child: Text(
-                          opt,
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: _answered && opt == currentItem['name']
-                                ? Colors.green
-                                : _answered && opt != currentItem['name']
-                                    ? Colors.red
-                                    : const Color(0xFFDDA0DD),
-                          ),
-                        ),
-                      ),
-                    ),
+                child: Text(
+                  opt,
+                  style: TextStyle(
+                    fontSize: isTV ? 48 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected
+                        ? Colors.green
+                        : isWrong
+                            ? Colors.red
+                            : widget.themeColor,
                   ),
-                );
-              }).toList(),
+                ),
+              ),
             ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

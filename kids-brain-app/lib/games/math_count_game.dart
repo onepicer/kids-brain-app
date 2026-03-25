@@ -1,34 +1,43 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import '../widgets/base_game_screen.dart';
+import '../services/tts_service.dart';
 
-class MathCountGame extends StatefulWidget {
-  const MathCountGame({super.key});
+class MathCountGame extends BaseGameScreen {
+  const MathCountGame({super.key}) 
+    : super(
+        title: '数学王国',
+        emoji: '👑',
+        themeColor: Color(0xFFFFE66D),
+      );
 
   @override
   State<MathCountGame> createState() => _MathCountGameState();
 }
 
-class _MathCountGameState extends State<MathCountGame> {
+class _MathCountGameState extends BaseGameState<MathCountGame> {
   static const List<String> _objects = ['🍎', '🌟', '🎈', '🌸', '🐟', '🍪', '🦋', '🍒'];
-
 
   String _currentObject = '🍎';
   int _count = 0;
   int _targetCount = 3;
   List<String> _options = [];
-  int _score = 0;
-  int _questionNum = 0;
-  bool _answered = false;
-  bool _correct = false;
   final Random _random = Random();
+
+  @override
+  String get questionText => '数一数，有几个？';
+  
+  @override
+  String? get correctAnswerText => _targetCount.toString();
 
   @override
   void initState() {
     super.initState();
-    _generateQuestion();
+    generateQuestion();
   }
 
-  void _generateQuestion() {
+  @override
+  void generateQuestion() {
     final objIndex = _random.nextInt(_objects.length);
     _currentObject = _objects[objIndex];
     _targetCount = _random.nextInt(6) + 2; // 2-7
@@ -43,164 +52,130 @@ class _MathCountGameState extends State<MathCountGame> {
     }
     _options = opts.map((i) => i.toString()).toList()..shuffle();
 
-    _answered = false;
-    _correct = false;
-    _questionNum++;
+    setState(() {
+      _answered = false;
+      _correct = false;
+      _questionNum++;
+    });
+    
+    // 题目生成后朗读
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakQuestionWithCount();
+    });
+  }
+  
+  Future<void> _speakQuestionWithCount() async {
+    final tts = TtsService();
+    await tts.speak('数一数，有几个$_currentObject？');
   }
 
-  void _checkAnswer(int selected) {
+  @override
+  void checkAnswer(dynamic selected) {
     if (_answered) return;
+    final selectedInt = selected as int;
     setState(() {
       _answered = true;
-      _correct = selected == _targetCount;
+      _correct = selectedInt == _targetCount;
       if (_correct) _score++;
     });
-    Future.delayed(const Duration(seconds: 1), () {
+    
+    // 播放反馈语音
+    final tts = TtsService();
+    if (_correct) {
+      tts.speak('答对了！真棒！');
+    } else {
+      tts.speak('不对哦，正确答案是 $_targetCount');
+    }
+    
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
       if (_questionNum >= 10) {
-        _showResult();
+        showResult();
       } else {
-        setState(() => _generateQuestion());
+        generateQuestion();
       }
     });
   }
 
-  void _showResult() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('🎉 答题结束', textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 24)),
-        content: Text(
-          '答对了 $_score/10 题\n${_score >= 7 ? '你太厉害了！🌟' : _score >= 4 ? '继续加油！💪' : '再练练吧！😊'}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 18),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() {
-                _score = 0;
-                _questionNum = 0;
-                _generateQuestion();
-              });
-            },
-            child: const Text('再来一轮', style: TextStyle(fontSize: 16)),
-          ),
-        ],
-      ),
+  @override
+  Widget buildQuestionContent() {
+    final objectSize = isTV ? 80.0 : 48.0;
+    final spacing = isTV ? 24.0 : 12.0;
+    
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: spacing,
+      runSpacing: spacing,
+      children: List.generate(_count, (_) {
+        return Text(_currentObject, style: TextStyle(fontSize: objectSize));
+      }),
     );
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF8E7),
-      appBar: AppBar(
-        title: const Text('👑 数学王国', style: TextStyle(color: Colors.white, fontSize: 22)),
-        backgroundColor: const Color(0xFFFFE66D),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Score & progress
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('得分: $_score', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.orange)),
-                Text('第 $_questionNum/10 题', style: const TextStyle(fontSize: 16, color: Colors.grey)),
+  Widget buildOptions() {
+    if (isTV && MediaQuery.of(context).size.width > MediaQuery.of(context).size.height) {
+      // TV 横屏：垂直排列大按钮
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: _options.map((opt) {
+          final optInt = int.tryParse(opt) ?? 0;
+          final isSelected = _answered && optInt == _targetCount;
+          final isWrong = _answered && optInt != _targetCount;
+          return TVButton(
+            text: opt,
+            onPressed: () => checkAnswer(optInt),
+            primaryColor: widget.themeColor,
+            isSelected: isSelected,
+            isWrong: isWrong,
+          );
+        }).toList(),
+      );
+    }
+    
+    // 普通布局：网格
+    return GridView.count(
+      crossAxisCount: isTV ? 3 : 3,
+      shrinkWrap: true,
+      mainAxisSpacing: isTV ? 32 : 16,
+      crossAxisSpacing: isTV ? 32 : 16,
+      childAspectRatio: isTV ? 1.5 : 1.2,
+      children: _options.map((opt) {
+        final optInt = int.tryParse(opt) ?? 0;
+        final isSelected = _answered && optInt == _targetCount;
+        final isWrong = _answered && optInt != _targetCount;
+        return GestureDetector(
+          onTap: () => checkAnswer(optInt),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.green[100] : isWrong ? Colors.red[100] : Colors.white,
+              borderRadius: BorderRadius.circular(isTV ? 40 : 20),
+              border: Border.all(
+                color: isSelected ? Colors.green : isWrong ? Colors.red : widget.themeColor,
+                width: isTV ? 6 : 3,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.themeColor.withOpacity(0.2),
+                  blurRadius: isTV ? 16 : 8,
+                  offset: Offset(0, isTV ? 8 : 4),
+                ),
               ],
             ),
-            const SizedBox(height: 16),
-            // Question
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [BoxShadow(color: Colors.orange.withOpacity(0.1), blurRadius: 10)],
-              ),
-              child: Column(
-                children: [
-                  const Text('数一数，有几个？', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-                  // Display objects in rows
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: List.generate(_count, (_) {
-                      return Text(_currentObject, style: const TextStyle(fontSize: 32));
-                    }),
-                  ),
-                ],
+            child: Center(
+              child: Text(
+                opt,
+                style: TextStyle(
+                  fontSize: isTV ? 72 : 36,
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.green : isWrong ? Colors.red : widget.themeColor,
+                ),
               ),
             ),
-            const SizedBox(height: 24),
-            // Options
-            if (!_answered)
-              const Text('选正确的数字：', style: TextStyle(fontSize: 18, color: Colors.grey))
-            else if (_correct)
-              const Text('✅ 答对了！', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.green))
-            else
-              Text('❌ 正确答案是 $_targetCount', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.red)),
-            const SizedBox(height: 16),
-            Expanded(
-              child: GridView.count(
-                crossAxisCount: 3,
-                shrinkWrap: true,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 1.2,
-                children: _options.map((opt) {
-                  final optInt = int.tryParse(opt) ?? 0;
-                  final isSelected = _answered && optInt == _targetCount;
-                  final isWrong = _answered && optInt != _targetCount;
-                  return GestureDetector(
-                    onTap: () => _checkAnswer(optInt),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      decoration: BoxDecoration(
-                        color: isSelected ? Colors.green[100] : isWrong ? Colors.red[100] : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? Colors.green : isWrong ? Colors.red : Colors.orange,
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.orange.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          opt,
-                          style: TextStyle(
-                            fontSize: 36,
-                            fontWeight: FontWeight.bold,
-                            color: isSelected ? Colors.green : isWrong ? Colors.red : Colors.orange,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 }
