@@ -241,7 +241,7 @@ class _MemoryGameState extends State<MemoryGame> with TickerProviderStateMixin {
                   gradient: const LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF4ECDC4), Color(0xFF44A08D)],
+                    colors: [const Color(0xFF4ECDC4), Color(0xFF44A08D)],
                   ),
                   borderRadius: BorderRadius.circular(isTV ? 32 : 16),
                   boxShadow: [

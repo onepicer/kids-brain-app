@@ -18,16 +18,12 @@ abstract class BaseGameScreen extends StatefulWidget {
 
 abstract class BaseGameState<T extends BaseGameScreen> extends State<T> {
   final TtsService _tts = TtsService();
-  int _score = 0;
-  int _questionNum = 0;
-  bool _answered = false;
-  bool _correct = false;
+  int score = 0;
+  int questionNum = 0;
+  bool answered = false;
+  bool correct = false;
 
-  // Public getters for child classes
-  int get score => _score;
-  int get questionNum => _questionNum;
-  bool get answered => _answered;
-  bool get correct => _correct;
+  // Public getters/setters for child classes
 
   // TV 适配
   bool get isTV {

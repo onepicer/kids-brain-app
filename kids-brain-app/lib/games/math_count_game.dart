@@ -8,7 +8,7 @@ class MathCountGame extends BaseGameScreen {
     : super(
         title: '数学王国',
         emoji: '👑',
-        themeColor: Color(0xFFFFE66D),
+        themeColor: const Color(0xFFFFE66D),
       );
 
   @override

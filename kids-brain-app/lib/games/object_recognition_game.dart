@@ -8,7 +8,7 @@ class ObjectRecognitionGame extends BaseGameScreen {
     : super(
         title: '语言岛',
         emoji: '🏝️',
-        themeColor: Color(0xFFDDA0DD),
+        themeColor: const Color(0xFFDDA0DD),
       );
 
   @override
