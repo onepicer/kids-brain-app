@@ -79,7 +79,6 @@ class _ObjectRecognitionGameState extends BaseGameState<ObjectRecognitionGame> {
   
   Future<void> _speakQuestionWithAnimal() async {
     final tts = TtsService();
-    final animalName = _items[_currentIndex]['name']!;
     await tts.speak('这是什么动物？');
   }
 
