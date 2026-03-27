@@ -44,11 +44,11 @@ class _MathCountGameState extends BaseGameState<MathCountGame> {
     _count = _targetCount;
 
     // Generate options
-    final correct = _targetCount;
-    final opts = <int>{correct};
+    final correctAnswer = _targetCount;
+    final opts = <int>{correctAnswer};
     while (opts.length < 3) {
       final opt = _random.nextInt(9) + 1;
-      if (opt != correct) opts.add(opt);
+      if (opt != correctAnswer) opts.add(opt);
     }
     _options = opts.map((i) => i.toString()).toList()..shuffle();
 
