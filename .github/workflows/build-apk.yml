@@ -26,12 +26,14 @@ jobs:
 
       - name: Get dependencies
         run: flutter pub get
+        working-directory: kids-brain-app
 
       - name: Build APK
         run: flutter build apk --release
+        working-directory: kids-brain-app
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: kids-brain-app/build/app/outputs/flutter-apk/app-release.apk
